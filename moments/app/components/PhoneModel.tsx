@@ -55,6 +55,7 @@ export default function PhoneModel({
 
     // Start playing
     video.play().catch((err) => {
+      if (err.name === "AbortError") return; // Expected when unmounting quickly
       console.warn("[PhoneModel] Video autoplay blocked:", err);
     });
 
