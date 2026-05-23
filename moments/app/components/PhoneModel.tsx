@@ -102,6 +102,8 @@ export default function PhoneModel({
     mat.needsUpdate = true;
 
     return () => {
+      window.removeEventListener("touchstart", handleUserInteraction);
+      window.removeEventListener("click", handleUserInteraction);
       video.pause();
       video.removeAttribute("src");
       video.load();
