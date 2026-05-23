@@ -59,26 +59,35 @@ export default function PhoneModel({
       console.warn("[PhoneModel] Video autoplay blocked:", err);
     });
 
+    // WAKE UP VIDEO ON MOBILE: Listen for the first touch/click to force play
+    const wakeVideo = () => {
+      if (video.paused) {
+        video.play().catch(() => {});
+      }
+    };
+    window.addEventListener("touchstart", wakeVideo, { once: true });
+    window.addEventListener("click", wakeVideo, { once: true });
+
     // Create a VideoTexture from the video element
     const videoTexture = new THREE.VideoTexture(video);
     videoTexture.flipY = false; // GLTF convention
     videoTexture.colorSpace = THREE.SRGBColorSpace;
     videoTexture.minFilter = THREE.LinearFilter;
     videoTexture.magFilter = THREE.LinearFilter;
-    
+
     // Zoom out more (1.3 means 30% more video area visible, preventing cut-off)
-    const zoom = 1.4; 
-    
+    const zoom = 1.4;
+
     // By setting the center to 0.5, 0.5, repeat scaling happens from the center of the texture
     videoTexture.center.set(0.5, 0.5);
-    
+
     // Fix mirroring (flip X) and upside-down (flip Y), and apply zoom
     videoTexture.repeat.set(zoom, -zoom);
-    
+
     // Prevent the video from repeating in the zoomed-out margins
     videoTexture.wrapS = THREE.ClampToEdgeWrapping;
     videoTexture.wrapT = THREE.ClampToEdgeWrapping;
-    
+
     videoTextureRef.current = videoTexture;
 
     // Apply to screen material
@@ -89,8 +98,17 @@ export default function PhoneModel({
     mat.needsUpdate = true;
 
     return () => {
+      window.removeEventListener("touchstart", wakeVideo);
+      window.removeEventListener("click", wakeVideo);
       video.pause();
-      video.src = "";
+      video.removeAttribute("src");
+      video.load();
+      
+      // Prevent Three.js crash on unmount/resize
+      mat.map = null;
+      mat.emissiveMap = null;
+      mat.needsUpdate = true;
+      
       videoTexture.dispose();
     };
   }, [clonedScene]); // depend on clonedScene since screenMaterialRef is set from it
