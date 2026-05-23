@@ -59,14 +59,18 @@ export default function PhoneModel({
       console.warn("[PhoneModel] Video autoplay blocked:", err);
     });
 
-    // WAKE UP VIDEO ON MOBILE: Listen for the first touch/click to force play
-    const wakeVideo = () => {
+    const handleUserInteraction = () => {
       if (video.paused) {
-        video.play().catch(() => {});
+        video.play().catch((err) => {
+          console.warn("[PhoneModel] Play on interaction failed:", err);
+        });
       }
+      window.removeEventListener("touchstart", handleUserInteraction);
+      window.removeEventListener("click", handleUserInteraction);
     };
-    window.addEventListener("touchstart", wakeVideo, { once: true });
-    window.addEventListener("click", wakeVideo, { once: true });
+
+    window.addEventListener("touchstart", handleUserInteraction);
+    window.addEventListener("click", handleUserInteraction);
 
     // Create a VideoTexture from the video element
     const videoTexture = new THREE.VideoTexture(video);
@@ -98,8 +102,6 @@ export default function PhoneModel({
     mat.needsUpdate = true;
 
     return () => {
-      window.removeEventListener("touchstart", wakeVideo);
-      window.removeEventListener("click", wakeVideo);
       video.pause();
       video.removeAttribute("src");
       video.load();
